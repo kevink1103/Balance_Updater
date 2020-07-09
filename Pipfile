@@ -10,6 +10,8 @@ gspread = "*"
 pydata-google-auth = "*"
 requests = "*"
 python-dotenv = "*"
+pandas = "*"
+pyprnt = "*"
 
 [requires]
 python_version = "3.7"

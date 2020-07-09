@@ -3,14 +3,19 @@ import time
 import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import pydata_google_auth
-import gspread
 from dotenv import load_dotenv
 load_dotenv(verbose=True)
+import pydata_google_auth
+import gspread
+import pandas as pd
+from pyprnt import prnt
 
 from exchanges import Bithumb
 
 EXCHANGES = [Bithumb]
+
+# DATAFRAME = pd.DataFrame()
+COUNTER = 0
 
 def get_google_credentials():
     scopes = [
@@ -21,61 +26,123 @@ def get_google_credentials():
     credentials.access_token = credentials.token
     return credentials
 
-def get_balance_sheet_with_credentials(credentials):
+def get_worksheet_with_credentials(credentials):
     gc = gspread.authorize(credentials)
     sheet_url = os.getenv("SHEET_URL")
     doc = gc.open_by_url(sheet_url)
     worksheet = doc.worksheets()[0]
     return worksheet
 
-def record_balance_to_balance_sheet(worksheet, exchange, balance):
+def get_start_row_index_for_exchange(exchange):
+    return EXCHANGES.index(exchange) * 2 + 1
+
+def get_current_datetime_string():
+    return datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+def create_batch_data_for_sheet_update(exchange, balance, orderbook):
     next_alphabet = lambda x: chr(ord(x) + 1)
 
+    batch_data = []
+
     start_column = "A"
-    start_row = EXCHANGES.index(exchange) * 2 + 1
+    start_row = get_start_row_index_for_exchange(exchange)
 
-    worksheet.update_acell(f"{start_column}{start_row}", exchange.__name__)
-    worksheet.update_acell(f"{start_column}{start_row+1}", datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-
+    batch_data.append({
+        "range": f"{start_column}{start_row}:{start_column}{start_row+1}",
+        "values": [
+            [exchange.__name__],
+            [get_current_datetime_string()]
+        ]
+    })
     start_column = next_alphabet(start_column)
 
     for currency, balances in balance.items():
         available = balances["available"]
         total = balances["total"]
 
-        worksheet.update_acell(f"{start_column}{start_row}", f"available_{currency}")
-        worksheet.update_acell(f"{start_column}{start_row+1}", available)
-
+        batch_data.append({
+            "range": f"{start_column}{start_row}:{start_column}{start_row+1}",
+            "values": [
+                [f"available_{currency}"],
+                [available]
+            ]
+        })
         start_column = next_alphabet(start_column)
 
-        worksheet.update_acell(f"{start_column}{start_row}", f"total_{currency}")
-        worksheet.update_acell(f"{start_column}{start_row+1}", total)
-
+        batch_data.append({
+            "range": f"{start_column}{start_row}:{start_column}{start_row+1}",
+            "values": [
+                [f"total_{currency}"],
+                [total]
+            ]
+        })
         start_column = next_alphabet(start_column)
-    print("UPDATED")
+
+    for k, v in orderbook.items():
+        if type(v) is dict:
+            # either ask or bid
+            for tag, value in v.items():
+                batch_data.append({
+                    "range": f"{start_column}{start_row}:{start_column}{start_row+1}",
+                    "values": [
+                        [f"{k}_{tag}"],
+                        [value]
+                    ]
+                })
+                start_column = next_alphabet(start_column)
+        else:
+            # spread
+            batch_data.append({
+                "range": f"{start_column}{start_row}:{start_column}{start_row+1}",
+                "values": [
+                    [f"{k}"],
+                    [v]
+                ]
+            })
+            start_column = next_alphabet(start_column)
+
+    return batch_data
 
 def runner(exchange, worksheet):
     try:
-        balance = exchange.get_balance("BTC")
-        record_balance_to_balance_sheet(worksheet, exchange, balance)
+        start_t = time.time()
+        balance = exchange.get_balance()
+        orderbook = exchange.get_orderbook("BTC")
+        print("EXCHAGNE API CALL TOOK: ", time.time() - start_t)
+
+        start_t = time.time()
+        batch_data = create_batch_data_for_sheet_update(exchange, balance, orderbook)
+        worksheet.batch_update(batch_data)
+        print("GOOGLE API CALL TOOK: ", time.time() - start_t)
+
+        global COUNTER
+        print("UPDATED", COUNTER)
+        COUNTER += 1
         # return balance
     except Exception as e:
         print(f"runner() error: {e}")
+        raise
 
 def main():
     credentials = get_google_credentials()
-    worksheet = get_balance_sheet_with_credentials(credentials)
+    worksheet = get_worksheet_with_credentials(credentials)
 
     threads = []
     while True:
+        start_t = time.time()
         with ThreadPoolExecutor(max_workers=20) as executor:
             for e in EXCHANGES:
                 threads.append(executor.submit(runner, e, worksheet))
-        # time.sleep(1)
+        remain_t = 1.2 - (time.time() - start_t)
+        if remain_t > 0:
+            time.sleep(remain_t)
+        print("ONE UPDATE TOOK: ", time.time() - start_t)
     
+    # For Synchronous Update if needed
     # for task in as_completed(threads):
     #     result = task.result()
     #     print(result, time.time())
+
 
 if __name__ == "__main__":
     main()

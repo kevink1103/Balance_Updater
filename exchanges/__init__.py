@@ -1,2 +1,2 @@
 from .exchange import Exchange
-from .bithumb import Bithumb
+from .Bithumb import Bithumb
