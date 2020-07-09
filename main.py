@@ -13,6 +13,7 @@ from pyprnt import prnt
 from exchanges import Bithumb
 
 EXCHANGES = [Bithumb]
+REFRESH_RATE = 1.2
 
 # DATAFRAME = pd.DataFrame()
 COUNTER = 0
@@ -116,12 +117,11 @@ def runner(exchange, worksheet):
         print("GOOGLE API CALL TOOK: ", time.time() - start_t)
 
         global COUNTER
-        print("UPDATED", COUNTER)
         COUNTER += 1
+        print("UPDATED", COUNTER)
         # return balance
     except Exception as e:
         print(f"runner() error: {e}")
-        raise
 
 def main():
     credentials = get_google_credentials()
@@ -133,7 +133,7 @@ def main():
         with ThreadPoolExecutor(max_workers=20) as executor:
             for e in EXCHANGES:
                 threads.append(executor.submit(runner, e, worksheet))
-        remain_t = 1.2 - (time.time() - start_t)
+        remain_t = REFRESH_RATE - (time.time() - start_t)
         if remain_t > 0:
             time.sleep(remain_t)
         print("ONE UPDATE TOOK: ", time.time() - start_t)

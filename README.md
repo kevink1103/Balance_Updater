@@ -25,7 +25,7 @@ BITHUMB_CONNECT_KEY=a41a7e553de1adc161f9fa1e3faf1e4e
 BITHUMB_SECRET_KEY=1de7e77d93a8e31951763b7087d7db9a
 ```
 
-- SHEET_URL : an url to your google sheet (make and open a sheet and copy & paste the link here)
+- SHEET_URL : an url to your Google Sheet (make and open a sheet and copy & paste the link here)
 - BITHUMB_CONNECT_KEY, BITHUMB_SECRET_KEY : get these from Bithumb website API section
 
 ### Step 3 - Install Dependencies and Run!
