@@ -130,9 +130,12 @@ def main():
     threads = []
     while True:
         start_t = time.time()
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            for e in EXCHANGES:
-                threads.append(executor.submit(runner, e, worksheet))
+        # with ThreadPoolExecutor(max_workers=20) as executor:
+        #     for e in EXCHANGES:
+        #         threads.append(executor.submit(runner, e, worksheet))
+        for e in EXCHANGES:
+            runner(e, worksheet)
+
         remain_t = REFRESH_RATE - (time.time() - start_t)
         if remain_t > 0:
             time.sleep(remain_t)
