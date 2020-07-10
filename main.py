@@ -1,7 +1,7 @@
 import os
 import time
 import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+# from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from dotenv import load_dotenv
 load_dotenv(verbose=True)
@@ -14,6 +14,9 @@ from exchanges import Bithumb
 
 EXCHANGES = [Bithumb]
 REFRESH_RATE = 1.2
+
+START_COLUMN = os.getenv("START_CELL")[0]
+START_ROW = int(os.getenv("START_CELL")[1])
 
 # DATAFRAME = pd.DataFrame()
 COUNTER = 0
@@ -35,7 +38,7 @@ def get_worksheet_with_credentials(credentials):
     return worksheet
 
 def get_start_row_index_for_exchange(exchange):
-    return EXCHANGES.index(exchange) * 2 + 1
+    return EXCHANGES.index(exchange) * 2 + START_ROW
 
 def get_current_datetime_string():
     return datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -45,7 +48,7 @@ def create_batch_data_for_sheet_update(exchange, balance, orderbook):
 
     batch_data = []
 
-    start_column = "A"
+    start_column = START_COLUMN
     start_row = get_start_row_index_for_exchange(exchange)
 
     batch_data.append({
@@ -127,7 +130,7 @@ def main():
     credentials = get_google_credentials()
     worksheet = get_worksheet_with_credentials(credentials)
 
-    threads = []
+    # threads = []
     while True:
         start_t = time.time()
         # with ThreadPoolExecutor(max_workers=20) as executor:

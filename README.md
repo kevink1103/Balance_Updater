@@ -1,13 +1,13 @@
 # Balance Updater
 
-Update Google Sheet periodically (every 1.2sec) to keep track of crypto asset balances (using [PyBithumb_API](https://github.com/kevink1103/PyBithumb_API))
+Update Google Sheet periodically (every 1.2sec - 1000 loops tested) to keep track of crypto asset balances (using [PyBithumb_API](https://github.com/kevink1103/PyBithumb_API))
 
 ## Get Started
 
 ### Step 1 - Clone this repo
 
 ```bash
-git clone https://github.com/kevink1103/Balance_Updater.git
+git clone https://github.com/kevink1103/balance_updater.git
 cd balance_updater
 ```
 
@@ -20,12 +20,14 @@ vi .env
 
 ```
 SHEET_URL=https://docs.google.com/spreadsheets/d/13vUOOTjdfrRM_EvLPatbKGKSQlL0w5Z2yUJ2o3Jdeyg/edit#gid=0
+START_CELL=A1
 
 BITHUMB_CONNECT_KEY=a41a7e553de1adc161f9fa1e3faf1e4e
 BITHUMB_SECRET_KEY=1de7e77d93a8e31951763b7087d7db9a
 ```
 
 - SHEET_URL : an url to your Google Sheet (make and open a sheet and copy & paste the link here)
+- START_CELL : a cell to start putting the updated data (should be the most top-left cell)
 - BITHUMB_CONNECT_KEY, BITHUMB_SECRET_KEY : get these from Bithumb website API section
 
 ### Step 3 - Install Dependencies and Run!
@@ -34,6 +36,10 @@ BITHUMB_SECRET_KEY=1de7e77d93a8e31951763b7087d7db9a
 pipenv install
 pipenv run python3 main.py
 ```
+
+This will draw the result as follows.
+
+![sheet](img/sheet.png)
 
 ## Disclaimer
 
